@@ -12,4 +12,12 @@
     <PackageReference Include="NetArchTest.Rules" />
   </ItemGroup>
 
+  <!-- Ruta del repositorio, para leer los .csproj aunque la salida del build esté fuera del árbol. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../../'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

@@ -35,7 +35,7 @@ y la spec de la fase que te asignaron en `docs/fases/`.
   - `Application` define **puertos** (interfaces); `Infrastructure` los implementa.
   - `Web` y `Agent.Windows` son *composition roots*: solo cablean dependencias y adaptan entrada/salida.
 - La lógica de presencia del agente vive en `Agent.Core` (sin WPF, sin Win32) para poder testearla. Win32 y Raw Input viven en `Agent.Windows`.
-- Los **tests de arquitectura** (`tests/ArchitectureTests`) hacen cumplir estas reglas. No los desactives para "hacer pasar" algo.
+- Los **tests de arquitectura** (`tests/BreakManager.ArchitectureTests`) hacen cumplir estas reglas. No los desactives para "hacer pasar" algo.
 - Los módulos del dominio (Planning, Presence, Identity, Reporting) se comunican por interfaces de `Application` o por eventos de dominio, nunca accediendo a las entidades internas del otro.
 - Sin MediatR ni AutoMapper: handlers explícitos registrados en DI y mapeo manual. Menos magia, menos dependencias.
 

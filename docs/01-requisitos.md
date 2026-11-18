@@ -176,7 +176,7 @@ Listado de reclasificaciones, reprogramaciones, ajustes del día y cambios de es
 
 ### Épica E6 — Administración
 
-**HU-50 · Parámetros** — MVP: edición de los parámetros de `02-dominio.md` §9, con auditoría.
+**HU-50 · Parámetros** — MVP: edición de los parámetros de `02-dominio.md` §10, con auditoría.
 **HU-51 · Catálogo de descansos no planificados** — MVP: alta, baja y modificación (desactivar, nunca borrar si tiene uso).
 **HU-52 · Retención de datos** — Post: purga automática de eventos con más antigüedad que `DataRetention`.
 **HU-53 · Integración con Milestone** — Post: identificación automática del operador por el login de XProtect (ADR-0005).

@@ -18,7 +18,7 @@ Los límites se hacen cumplir con **tests de arquitectura**.
 
 | Alternativa | Ventajas | Desventajas | Veredicto |
 |---|---|---|---|
-| Microservicios | Escalado y despliegue independientes | Complejidad operativa desproporcionada (red, observabilidad, consistencia) para 1 VM, 25 agentes y una decena de usuarios web | Descartada |
+| Microservicios | Escalado y despliegue independientes | Complejidad operativa desproporcionada (red, observabilidad, consistencia) para 1 VM, 20 agentes y una decena de usuarios web | Descartada |
 | Monolito en capas sin módulos | Lo más simple | Con el tiempo los módulos se acoplan | Descartada |
 | **Monolito modular** | Simple de operar; límites claros; se puede extraer un módulo si alguna vez hace falta | Requiere disciplina, sostenida con tests de arquitectura | **Elegida** |
 

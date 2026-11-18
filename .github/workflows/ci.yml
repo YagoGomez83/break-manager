@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_VERSION: "10.0.x"
+
+jobs:
+  server:
+    name: Servidor (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore BreakManager.Server.slnf
+
+      - name: Build (sin warnings)
+        run: dotnet build BreakManager.Server.slnf --configuration Release --no-restore
+
+      # Incluye los tests de arquitectura y los de integración con Testcontainers (Docker del runner).
+      - name: Test
+        run: dotnet test --solution BreakManager.Server.slnf --configuration Release --no-build
+
+  agent:
+    name: Solución completa y dependencias (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore BreakManager.sln
+
+      - name: Build (sin warnings)
+        run: dotnet build BreakManager.sln --configuration Release --no-restore
+
+      - name: Test (Agent.Core)
+        run: dotnet test --project tests/BreakManager.Agent.Core.Tests --configuration Release --no-build
+
+      - name: Paquetes vulnerables (falla con severidad alta o crítica)
+        shell: pwsh
+        run: |
+          $report = dotnet list BreakManager.sln package --vulnerable --include-transitive --format json | ConvertFrom-Json
+          $findings = foreach ($project in $report.projects) {
+            foreach ($framework in @($project.frameworks)) {
+              foreach ($package in @($framework.topLevelPackages) + @($framework.transitivePackages)) {
+                foreach ($vulnerability in @($package.vulnerabilities)) {
+                  if ($vulnerability.severity -in @('High', 'Critical')) {
+                    "$($package.id) $($package.resolvedVersion): $($vulnerability.severity) $($vulnerability.advisoryurl)"
+                  }
+                }
+              }
+            }
+          }
+          $findings = @($findings | Where-Object { $_ } | Sort-Object -Unique)
+          if ($findings.Count -gt 0) {
+            $findings | ForEach-Object { Write-Host "::error::$_" }
+            exit 1
+          }
+          Write-Host "Sin vulnerabilidades altas o críticas."
+
+  secrets:
+    name: Escaneo de secretos (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  image:
+    name: Imagen Docker + Trivy
+    runs-on: ubuntu-latest
+    needs: server
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build de la imagen
+        run: docker build --file src/Server/BreakManager.Web/Dockerfile --tag breakmanager-web:ci .
+
+      - name: Escaneo con Trivy (falla en críticas)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: breakmanager-web:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table

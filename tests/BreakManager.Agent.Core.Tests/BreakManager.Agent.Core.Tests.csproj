@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Agent\BreakManager.Agent.Core\BreakManager.Agent.Core.csproj" />
+  </ItemGroup>
+
+</Project>

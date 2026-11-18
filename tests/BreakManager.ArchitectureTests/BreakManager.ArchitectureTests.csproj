@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Server\BreakManager.Domain\BreakManager.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Server\BreakManager.Application\BreakManager.Application.csproj" />
+    <ProjectReference Include="..\..\src\Server\BreakManager.Infrastructure\BreakManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Shared\BreakManager.Contracts\BreakManager.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Agent\BreakManager.Agent.Core\BreakManager.Agent.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetArchTest.Rules" />
+  </ItemGroup>
+
+</Project>

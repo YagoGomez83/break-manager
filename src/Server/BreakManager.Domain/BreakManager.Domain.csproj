@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Domain no referencia otros proyectos ni paquetes: solo la BCL (lo verifican los tests de arquitectura). -->
+
+</Project>

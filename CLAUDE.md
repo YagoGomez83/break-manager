@@ -66,12 +66,25 @@ y la spec de la fase que te asignaron en `docs/fases/`.
 
 ## Comandos
 
-> Se completan en la Fase 1.
+Detalle y requisitos en `docs/desarrollo.md`.
 
 ```bash
-dotnet build BreakManager.sln
-dotnet test BreakManager.sln
-docker compose -f deploy/docker-compose.dev.yml up -d
+dotnet build BreakManager.sln                          # todo (el agente WPF requiere Windows)
+dotnet build BreakManager.Server.slnf                  # servidor + Agent.Core (Linux/CI)
+dotnet test --solution BreakManager.Server.slnf        # todos los tests (Testcontainers requiere Docker)
+dotnet test --project tests/BreakManager.ArchitectureTests
+
+# Si la PC no puede ejecutar binarios locales (p. ej. Smart App Control), los tests corren en un contenedor:
+scripts/dotnet-docker.sh dotnet test --solution BreakManager.Server.slnf
+
+# Entorno local (copiar antes deploy/.env.example a deploy/.env y completar POSTGRES_PASSWORD)
+docker compose -f deploy/docker-compose.dev.yml up -d --build
+curl http://127.0.0.1:8080/health/ready
+
+# Migraciones (nunca se aplican solas al arrancar)
+dotnet tool restore
+dotnet ef migrations add <Nombre> --project src/Server/BreakManager.Infrastructure --startup-project src/Server/BreakManager.Web --output-dir Persistence/Migrations
+dotnet src/Server/BreakManager.Web/bin/Debug/net10.0/BreakManager.Web.dll migrate   # o el servicio `migrate` del compose
 ```
 
 ## Definition of Done (por historia o tarea)

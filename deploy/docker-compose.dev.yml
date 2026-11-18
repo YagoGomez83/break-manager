@@ -1,0 +1,65 @@
+# Entorno local de desarrollo: PostgreSQL + migraciones + aplicación.
+#   cp deploy/.env.example deploy/.env   (y completar POSTGRES_PASSWORD)
+#   docker compose -f deploy/docker-compose.dev.yml up -d --build
+name: breakmanager-dev
+
+x-app-build: &app-build
+  context: ..
+  dockerfile: src/Server/BreakManager.Web/Dockerfile
+  secrets:
+    - extra_ca
+
+x-app-environment: &app-environment
+  ConnectionStrings__BreakManager: "Host=db;Port=5432;Database=${POSTGRES_DB:-breakmanager};Username=${POSTGRES_USER:-breakmanager};Password=${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en deploy/.env}"
+  ASPNETCORE_ENVIRONMENT: Development
+  Telemetry__Exporter: ${TELEMETRY_EXPORTER:-none}
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-breakmanager}
+      POSTGRES_USER: ${POSTGRES_USER:-breakmanager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en deploy/.env}
+    volumes:
+      # PostgreSQL 18 guarda los datos en /var/lib/postgresql/<versión>/...
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Solo en desarrollo: la base se publica en el loopback del host, en un puerto configurable.
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-5432}:5432"
+
+  migrate:
+    build: *app-build
+    image: breakmanager-web:dev
+    command: ["migrate"]
+    environment: *app-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build: *app-build
+    image: breakmanager-web:dev
+    environment: *app-environment
+    ports:
+      - "127.0.0.1:${APP_HOST_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  db-data:
+
+secrets:
+  # CA raíz extra para el build (antivirus o proxy que intercepta TLS). Vacío = sin CA extra.
+  extra_ca:
+    file: ${EXTRA_CA_CERT:-./no-extra-ca.crt}

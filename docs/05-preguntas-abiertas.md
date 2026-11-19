@@ -30,6 +30,18 @@ Elegidas por simplicidad; se pueden revisar en el PR.
 | Tests de arquitectura | Doble verificación: referencias en los `.csproj` (detecta un paquete aunque no se use) y dependencias reales en IL (NetArchTest). |
 | Entorno de desarrollo con TLS interceptado | `EXTRA_CA_CERT` opcional para el script de contenedor y para el build de la imagen (secreto de BuildKit; no llega a la imagen final). |
 
+## Decisiones menores tomadas sin spec (Fase 2)
+
+Elegidas por simplicidad; se pueden revisar en el PR.
+
+| Tema | Decisión |
+|---|---|
+| Re-login del mismo operador en el mismo puesto | Si el operador ya tiene la sesión abierta en ese puesto (p. ej. se reinició el agente y el token de sesión vivía solo en memoria), se **renueva el token** de esa sesión, sin cerrarla. No aplica `Relevo` ni `MovedToAnotherWorkstation` porque el operador no dejó el puesto. |
+| Identificadores de `EndReason` | En código, en inglés: `Logout`, `Relief` (Relevo), `MovedToAnotherWorkstation`, `Revocation`, `Disconnection` (Desconexión), `EndOfShift` (FinDeTurno). |
+| Hash del PIN | El puerto `IPinHasher` vive en `Domain`: el agregado `Operator` lo necesita para verificar que el PIN nuevo sea distinto del actual. Infrastructure lo implementa con PBKDF2 (ADR-0011). |
+| Número de puesto | No se modifica después del alta: se editan fila, columna y hostname. Para renumerar se da de alta otro puesto. |
+| PIN nuevo | Además de no ser trivial, tiene que ser distinto del PIN actual (el temporal). |
+
 ## Resueltas
 
 | # | Pregunta | Respuesta |

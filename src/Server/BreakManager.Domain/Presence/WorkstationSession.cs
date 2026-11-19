@@ -144,4 +144,6 @@ public sealed record SessionOpening(WorkstationSession Session, bool IsNew, IRea
 public static class WorkstationSessionErrors
 {
     public static readonly Error AlreadyEnded = new("WorkstationSession.AlreadyEnded", "La sesión ya estaba cerrada.");
+
+    public static readonly Error NotFound = new("WorkstationSession.NotFound", "La sesión no existe.");
 }

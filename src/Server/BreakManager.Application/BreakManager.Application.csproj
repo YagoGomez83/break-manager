@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BreakManager.Application.Tests" />
+  </ItemGroup>
+
 </Project>

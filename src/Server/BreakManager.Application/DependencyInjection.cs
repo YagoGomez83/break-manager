@@ -1,8 +1,11 @@
 using System.Reflection;
 using BreakManager.Application.Abstractions;
+using BreakManager.Application.Identity;
+using BreakManager.Application.Presence;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace BreakManager.Application;
 
@@ -32,6 +35,9 @@ public static class DependencyInjection
             RegisterHandlers(services, assembly);
             services.AddValidatorsFromAssembly(assembly, ServiceLifetime.Scoped, includeInternalTypes: true);
         }
+
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<IdentityParameters>, IdentityParametersValidator>());
+        services.TryAddScoped<IWorkstationSessionService, WorkstationSessionService>();
 
         return services;
     }

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- DTOs y contratos de hub compartidos servidor <-> agente. Sin dependencias. -->
+
+</Project>

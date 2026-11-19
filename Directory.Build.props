@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!--
+    Al compilar dentro de un contenedor (scripts/dotnet-docker.sh) bin/ y obj/ van a un volumen aparte
+    para no mezclarse con los artefactos de Windows del mismo árbol de trabajo.
+  -->
+  <PropertyGroup Condition="'$(BREAKMANAGER_ARTIFACTS_PATH)' != ''">
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <ArtifactsPath>$(BREAKMANAGER_ARTIFACTS_PATH)</ArtifactsPath>
+  </PropertyGroup>
+</Project>

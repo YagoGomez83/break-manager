@@ -14,6 +14,21 @@ Estado: 🔴 bloquea una fase · 🟡 se puede avanzar con un supuesto · ✅ re
 | Q12 | ¿Un supervisor ve solo su grupo o todos? ¿Hay supervisores suplentes que cubren otros grupos? | Autorización | Ve su grupo; Coordinación ve todos; suplencias asignables por el Admin | Fase 5 | 🟡 |
 | Q13 | Recursos de la VM (CPU, RAM, disco) y sistema operativo | Dimensionamiento | 2 vCPU, 4 GB RAM, 50 GB | Fase 7 | 🟡 |
 | Q15 | ¿Quién gestiona el esquema base: Coordinación, o cada supervisor parte de su propio esquema? | Permisos (RN-33) | Coordinación gestiona el base; los supervisores lo ajustan para su grupo | Fase 3 | 🟡 |
+| Q16 | ¿El operador puede cerrar el agente desde la bandeja ("Salir")? ¿O hace falta PIN o permiso de supervisor? | HU-26, RN-15 | Fase 1: "Salir" sin restricción (lo pide la spec); el cierre se ve como *Desconectado* | Fase 4 | 🟡 |
+
+## Decisiones menores tomadas sin spec (Fase 1)
+
+Elegidas por simplicidad; se pueden revisar en el PR.
+
+| Tema | Decisión |
+|---|---|
+| Runner de tests | xUnit v3 sobre Microsoft.Testing.Platform (`global.json` → `"test": {"runner": "Microsoft.Testing.Platform"}`); sin `Microsoft.NET.Test.Sdk`. Aserciones con `Assert` de xUnit (FluentAssertions v8 tiene licencia comercial). |
+| Tabla de historial de migraciones | `__ef_migrations_history` (snake_case, coherente con la convención de la base). |
+| Instancia única del agente | Mutex `Global\BreakManager.Agent`: una instancia por PC aunque haya varias sesiones de Windows. |
+| Migraciones | Comando explícito `BreakManager.Web.dll migrate`; en el compose de desarrollo, servicio one-shot `migrate`. |
+| Métricas | Exportador `none` por defecto, `console` en Development, `otlp` opcional (`Telemetry:Exporter`). |
+| Tests de arquitectura | Doble verificación: referencias en los `.csproj` (detecta un paquete aunque no se use) y dependencias reales en IL (NetArchTest). |
+| Entorno de desarrollo con TLS interceptado | `EXTRA_CA_CERT` opcional para el script de contenedor y para el build de la imagen (secreto de BuildKit; no llega a la imagen final). |
 
 ## Resueltas
 

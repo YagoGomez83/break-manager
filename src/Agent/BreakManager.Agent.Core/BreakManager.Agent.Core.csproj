@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Lógica testeable del agente: sin WPF ni Win32. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\BreakManager.Contracts\BreakManager.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

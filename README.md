@@ -18,6 +18,9 @@ con detección de inactividad en el puesto y tablero en vivo para supervisión.
 | `docs/05-preguntas-abiertas.md` | Decisiones pendientes con el negocio |
 | `docs/adr/` | Architecture Decision Records |
 | `docs/fases/` | Especificaciones ejecutables por fase (lo que se le entrega a Claude Code) |
+| `docs/desarrollo.md` | Entorno de desarrollo: requisitos, build, tests, migraciones, Docker |
+| `src/`, `tests/` | Solución .NET 10 (`BreakManager.sln`) |
+| `deploy/` | Docker Compose y configuración de despliegue |
 
 ## Forma de trabajo
 
@@ -27,5 +30,6 @@ con detección de inactividad en el puesto y tablero en vivo para supervisión.
 
 ## Estado
 
-Fase 0 — Descubrimiento: **completa a nivel borrador**, con preguntas abiertas en `docs/05-preguntas-abiertas.md`.
-Próxima: Fase 1 — Esqueleto de la solución (`docs/fases/fase-01-esqueleto.md`).
+- Fase 0 — Descubrimiento: **completa a nivel borrador**, con preguntas abiertas en `docs/05-preguntas-abiertas.md`.
+- Fase 1 — Esqueleto de la solución: **implementada, en revisión** (`docs/fases/fase-01-esqueleto.md`). Cómo compilar, probar y levantar el entorno: `docs/desarrollo.md`.
+- Próxima: Fase 2 — Identidad.

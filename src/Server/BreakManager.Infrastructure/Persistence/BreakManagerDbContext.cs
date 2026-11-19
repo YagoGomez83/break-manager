@@ -21,6 +21,15 @@ internal sealed class BreakManagerDbContext(DbContextOptions<BreakManagerDbConte
         base.OnModelCreating(builder);
         builder.ApplyConfigurationsFromAssembly(typeof(BreakManagerDbContext).Assembly);
 
+        // IdentityDbContext fija nombres AspNet*; se pasan a snake_case como el resto del esquema.
+        builder.Entity<ApplicationUser>().ToTable("users");
+        builder.Entity<IdentityRole<Guid>>().ToTable("roles");
+        builder.Entity<IdentityUserRole<Guid>>().ToTable("user_roles");
+        builder.Entity<IdentityUserClaim<Guid>>().ToTable("user_claims");
+        builder.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins");
+        builder.Entity<IdentityUserToken<Guid>>().ToTable("user_tokens");
+        builder.Entity<IdentityRoleClaim<Guid>>().ToTable("role_claims");
+
         // Los eventos de dominio no se persisten.
         foreach (var entityType in builder.Model.GetEntityTypes()
             .Where(t => IsAggregateRoot(t.ClrType)))

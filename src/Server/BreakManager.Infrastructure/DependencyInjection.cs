@@ -4,6 +4,7 @@ using BreakManager.Application.Common.Security;
 using BreakManager.Application.Identity;
 using BreakManager.Application.Identity.Queries;
 using BreakManager.Application.Presence;
+using BreakManager.Domain.Common;
 using BreakManager.Domain.Identity;
 using BreakManager.Infrastructure.Identity;
 using BreakManager.Infrastructure.Persistence;
@@ -71,6 +72,20 @@ public static class DependencyInjection
         await using var scope = services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<BreakManagerDbContext>();
         await dbContext.Database.MigrateAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Siembra de arranque (la llama el comando <c>migrate</c>, después de las migraciones): roles web,
+    /// admin inicial si no existe ningún Administrador, y el aviso BORRADOR solo en Development.
+    /// </summary>
+    public static Task<Result<SeedReport>> SeedDatabaseAsync(
+        this IServiceProvider services,
+        SeedSettings settings,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(settings);
+        return DatabaseSeeder.SeedAsync(services, settings, cancellationToken);
     }
 
     internal static void Configure(DbContextOptionsBuilder options, string connectionString) =>

@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  # Acciones de .github/workflows (fijadas por SHA; Dependabot actualiza el SHA y el comentario de versión).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
+  # Paquetes NuGet (Central Package Management en Directory.Packages.props).
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(deps)
+
+  # Imágenes base del Dockerfile del servidor.
+  - package-ecosystem: docker
+    directory: /src/Server/BreakManager.Web
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore(deps)

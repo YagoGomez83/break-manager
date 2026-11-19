@@ -115,18 +115,25 @@ internal sealed class UserAccountService(
     }
 
     public async Task<UserAccountSummary?> GetAsync(Guid userId, CancellationToken cancellationToken) =>
-        (await QuerySummaries().Where(u => u.Id == userId).ToListAsync(cancellationToken).ConfigureAwait(false))
-        .Select(ToSummary)
-        .SingleOrDefault();
+        (await QuerySummariesAsync(userId, cancellationToken).ConfigureAwait(false)).SingleOrDefault();
 
-    public async Task<IReadOnlyList<UserAccountSummary>> ListAsync(CancellationToken cancellationToken) =>
-        [.. (await QuerySummaries().OrderBy(u => u.UserName).ToListAsync(cancellationToken).ConfigureAwait(false)).Select(ToSummary)];
+    public Task<IReadOnlyList<UserAccountSummary>> ListAsync(CancellationToken cancellationToken) =>
+        QuerySummariesAsync(null, cancellationToken);
 
-    private IQueryable<UserRow> QuerySummaries() =>
-        from user in dbContext.Users.AsNoTracking()
-        join userRole in dbContext.UserRoles on user.Id equals userRole.UserId
-        join role in dbContext.Roles on userRole.RoleId equals role.Id
-        select new UserRow(user.Id, user.UserName!, role.Name!, user.Group, user.Active, user.LockoutEnd);
+    private async Task<IReadOnlyList<UserAccountSummary>> QuerySummariesAsync(Guid? userId, CancellationToken cancellationToken)
+    {
+        var rows = await (
+                from user in dbContext.Users.AsNoTracking()
+                where userId == null || user.Id == userId
+                join userRole in dbContext.UserRoles on user.Id equals userRole.UserId
+                join role in dbContext.Roles on userRole.RoleId equals role.Id
+                orderby user.UserName
+                select new { user.Id, user.UserName, RoleName = role.Name, user.Group, user.Active, user.LockoutEnd })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return [.. rows.Select(r => ToSummary(new UserRow(r.Id, r.UserName!, r.RoleName!, r.Group, r.Active, r.LockoutEnd)))];
+    }
 
     private UserAccountSummary ToSummary(UserRow row) =>
         new(

@@ -32,9 +32,9 @@ public sealed class DatabaseMigrationTests(PostgreSqlFixture database) : IClassF
 
         Assert.True(await dbContext.Database.CanConnectAsync(cancellationToken));
         Assert.Empty(await dbContext.Database.GetPendingMigrationsAsync(cancellationToken));
-        Assert.Contains(
-            await dbContext.Database.GetAppliedMigrationsAsync(cancellationToken),
-            migration => migration.EndsWith("_InitialCreate", StringComparison.Ordinal));
+        var applied = await dbContext.Database.GetAppliedMigrationsAsync(cancellationToken);
+        Assert.Contains(applied, migration => migration.EndsWith("_InitialCreate", StringComparison.Ordinal));
+        Assert.Contains(applied, migration => migration.EndsWith("_AddIdentityModule", StringComparison.Ordinal));
     }
 
     [Fact]

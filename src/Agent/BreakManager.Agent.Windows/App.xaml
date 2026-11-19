@@ -12,6 +12,9 @@
       </tb:TaskbarIcon.IconSource>
       <tb:TaskbarIcon.ContextMenu>
         <ContextMenu>
+          <MenuItem Header="Abrir" Click="OnOpenClick" />
+          <MenuItem Tag="Logout" Header="Cerrar sesión" Click="OnLogoutClick" IsEnabled="False" />
+          <Separator />
           <MenuItem Header="Acerca de" Click="OnAboutClick" />
           <Separator />
           <MenuItem Header="Salir" Click="OnExitClick" />

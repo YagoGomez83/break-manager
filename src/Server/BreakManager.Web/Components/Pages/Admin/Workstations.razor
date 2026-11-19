@@ -1,0 +1,123 @@
+@page "/admin/puestos"
+@attribute [Authorize(Policy = AuthorizationPolicies.Administrator)]
+@rendermode InteractiveServer
+@using BreakManager.Application.Identity.Queries
+@using BreakManager.Application.Identity.Workstations
+@using BreakManager.Domain.Common
+@inject HandlerRunner Runner
+
+<PageTitle>Puestos — BreakManager</PageTitle>
+
+<h1>Puestos</h1>
+
+<StatusMessage Message="@_message" IsError="@_isError" />
+
+@if (_generatedCode is not null)
+{
+    <section class="bm-code" aria-live="polite">
+        <p>Código de enrolamiento del puesto <strong>@_generatedFor</strong>. Se muestra <strong>una sola vez</strong>:</p>
+        <p class="bm-code-value">@_generatedCode.Code</p>
+        <p>Vence el @OperationalTime.Format(_generatedCode.ExpiresAt).</p>
+        <button type="button" @onclick="() => _generatedCode = null">Listo, ya lo copié</button>
+    </section>
+}
+
+<table class="bm-table">
+    <thead>
+        <tr>
+            <th>N.º</th><th>Fila</th><th>Columna</th><th>Hostname</th><th>Estado</th><th>Último uso</th><th>Última IP</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var w in _items)
+        {
+            <tr>
+                <td>@w.Number</td>
+                <td>@w.Row</td>
+                <td>@w.Column</td>
+                <td>@w.Hostname</td>
+                <td>@(w.Revoked ? "Revocado" : w.Enrolled ? "Enrolado" : "Sin enrolar")</td>
+                <td>@OperationalTime.Format(w.LastSeenAt)</td>
+                <td>@(w.LastSeenIp ?? "—")</td>
+                <td>
+                    <button type="button" @onclick="() => GenerateCodeAsync(w)">Generar código</button>
+                    @if (w.Enrolled && !w.Revoked)
+                    {
+                        <button type="button" class="bm-danger" @onclick="() => RevokeAsync(w)">Revocar</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Alta de puesto</h2>
+
+<EditForm Model="_new" OnValidSubmit="CreateAsync" FormName="new-workstation" class="bm-form bm-inline">
+    <label>N.º <InputNumber @bind-Value="_new.Number" min="1" max="20" /></label>
+    <label>Fila <InputNumber @bind-Value="_new.Row" min="1" /></label>
+    <label>Columna <InputNumber @bind-Value="_new.Column" min="1" /></label>
+    <label>Hostname <InputText @bind-Value="_new.Hostname" /></label>
+    <button type="submit">Agregar</button>
+</EditForm>
+
+@code {
+    private IReadOnlyList<WorkstationListItem> _items = [];
+    private readonly NewWorkstation _new = new();
+    private GeneratedEnrollmentCode? _generatedCode;
+    private int _generatedFor;
+    private string? _message;
+    private bool _isError;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() =>
+        _items = await Runner.QueryAsync<ListWorkstationsQuery, IReadOnlyList<WorkstationListItem>>(new ListWorkstationsQuery());
+
+    private async Task CreateAsync()
+    {
+        var result = await Runner.SendAsync<CreateWorkstationCommand, Result<Guid>>(
+            new CreateWorkstationCommand(_new.Number, _new.Row, _new.Column, _new.Hostname));
+        Show(result, $"Puesto {_new.Number} agregado.");
+        await LoadAsync();
+    }
+
+    private async Task GenerateCodeAsync(WorkstationListItem workstation)
+    {
+        var result = await Runner.SendAsync<GenerateEnrollmentCodeCommand, Result<GeneratedEnrollmentCode>>(
+            new GenerateEnrollmentCodeCommand(workstation.Id, await ActorAsync()));
+        if (result.IsSuccess)
+        {
+            _generatedCode = result.Value;
+            _generatedFor = workstation.Number;
+        }
+
+        Show(result, null);
+    }
+
+    private async Task RevokeAsync(WorkstationListItem workstation)
+    {
+        var result = await Runner.SendAsync<RevokeWorkstationCommand, Result>(new RevokeWorkstationCommand(workstation.Id, await ActorAsync()));
+        Show(result, $"Puesto {workstation.Number} revocado. Para volver a usarlo hay que enrolarlo de nuevo.");
+        await LoadAsync();
+    }
+
+    private async Task<Guid> ActorAsync() => (await AuthenticationState).User.GetUserId();
+
+    private void Show(Result result, string? success)
+    {
+        _isError = result.IsFailure;
+        _message = result.IsFailure ? result.Error.Message : success;
+    }
+
+    private sealed class NewWorkstation
+    {
+        public int Number { get; set; } = 1;
+        public int Row { get; set; } = 1;
+        public int Column { get; set; } = 1;
+        public string Hostname { get; set; } = string.Empty;
+    }
+}

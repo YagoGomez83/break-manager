@@ -49,7 +49,7 @@
 
 | Módulo | Responsabilidad | Agregados principales |
 |---|---|---|
-| **Identity** | Usuarios y roles, operadores, puestos (PCs enroladas), aceptación de avisos | `UserAccount`, `Operator`, `Workstation`, `PrivacyNotice` |
+| **Identity** | Usuarios y roles, operadores, puestos (PCs enroladas), aceptación de avisos | `Operator`, `Workstation`, `EnrollmentCode`, `LoginTicket`, `PrivacyNotice` (`UserAccount` vive en Infrastructure, ADR-0011) |
 | **Planning** | Cronograma de guardias, esquemas de descanso (base y del grupo), plan del turno, relevos | `DutyRoster`, `BreakScheme`, `ShiftPlan` |
 | **Presence** | Sesiones, eventos de presencia, estado actual, descansos reales, reclasificaciones | `WorkstationSession`, `OperatorPresence` (+ `PresenceEvent` append-only) |
 | **Reporting** | Proyecciones e informes (adherencia, ausencias, inactividad, cobertura) | Proyecciones de lectura |
@@ -82,7 +82,10 @@ flowchart LR
 
 ### Presence
 
-- **WorkstationSession** (raíz) — `WorkstationId`, `OperatorId`, `StartedAt`, `EndedAt?`, `EndReason` (Logout/Relevo/Desconexión/FinDeTurno)
+- **WorkstationSession** (raíz) — `WorkstationId`, `OperatorId`, `StartedAt`, `EndedAt?`, `EndReason` (Logout/Relevo/MovedToAnotherWorkstation/Revocation/Desconexión/FinDeTurno)
+  - `Relevo`: **otro** operador abre sesión en el puesto (RN-17).
+  - `MovedToAnotherWorkstation`: el **mismo** operador abre sesión en otro puesto (RN-16).
+  - `Revocation`: el Admin revoca el puesto (ADR-0010).
 - **OperatorPresence** (raíz, una por operador y turno) — `OperatorId`, `OperationalDate`, `CurrentStatus`, `CurrentPeriod`
   - Produce **PresenceEvent** (append-only): `Id` (UUID v7), `Type`, `OperatorId`, `WorkstationId?`, `OccurredAt`, `ReceivedAt`, `Source` (Agent/Supervisor/System), `Flags` (Deferred, ClockSuspect), `Data`
   - `ActualBreak` — `Kind` (Planificado/NoPlanificado/Ausencia), `Type?`, `StartedAt`, `EndedAt?`, `PlannedBreakId?`
@@ -90,10 +93,15 @@ flowchart LR
 
 ### Identity
 
-- **Operator** — `EmployeeNumber`, `FullName`, `Group`, `HomeWorkstation?`, `Active`, PIN (hash)
-- **Workstation** — `Number`, `Row`, `Column` (ubicación física en la sala), `Hostname`, `DeviceTokenHash`, `ServiceStatus` (EnServicio | FueraDeServicio, con motivo, desde y autor), `Active`
-- **UserAccount** — usuario web con rol (Supervisor con su grupo, Coordinador, Calidad, Administrador)
-- **PrivacyNotice** / `NoticeAcceptance` — `OperatorId`, `Version`, `AcceptedAt`, `WorkstationId`
+- **Operator** — `EmployeeNumber`, `FullName`, `Group`, `HomeWorkstation?`, `Active`, `PinHash`, `MustChangePin`
+  - PIN: 6 dígitos, no trivial (sin repetidos, secuencias ni el legajo). El Admin asigna uno temporal y el operador lo cambia en el primer login.
+  - Bloqueo: `FailedAttempts`, `LockedUntil?`, `RecentLockouts` (bloqueos dentro de la ventana) y `RequiresManualUnlock` (bloqueo progresivo, R20). Solo el Admin desbloquea.
+- **Workstation** — `Number`, `Row`, `Column` (ubicación física en la sala), `Hostname`, `ServiceStatus` (EnServicio | FueraDeServicio; la operación llega con HU-06), `Revoked`
+  - `DeviceCredential` (historial; una sola vigente) — `TokenHash`, `IssuedAt`, `RevokedAt?`, `LastSeenAt?`, `LastSeenIp?` (ADR-0010).
+- **EnrollmentCode** — `WorkstationId`, `CodeHash`, `ExpiresAt`, `RedeemedAt?`, `InvalidatedAt?`. Un solo uso.
+- **LoginTicket** — `OperatorId`, `DeviceCredentialId`, `TokenHash`, `NoticeVersion?`, `RequiresPinChange`, `ExpiresAt`, `ConsumedAt?`. Une el login con sus pasos pendientes; se consume en la transacción que abre la sesión.
+- **UserAccount** — usuario web con rol (Supervisor con su grupo, Coordinador, Calidad, Administrador). Se implementa con ASP.NET Core Identity en Infrastructure (ADR-0011), no es una entidad de Domain.
+- **PrivacyNotice** (versiones inmutables) / `NoticeAcceptance` — `OperatorId`, `Version`, `AcceptedAt`, `WorkstationId`
 
 ## 4. Códigos del cronograma de guardias
 
@@ -170,7 +178,7 @@ stateDiagram-v2
 ### Puestos, sesiones y relevos
 
 - **RN-15 — Desconexión:** sin heartbeat durante `HeartbeatTimeout` (30 s) → *Desconectado*. No es lo mismo que *Ausente*.
-- **RN-16 — Atribución por sesión:** la actividad de un puesto se atribuye al operador con sesión abierta. Máximo una sesión abierta por puesto y una por operador.
+- **RN-16 — Atribución por sesión:** la actividad de un puesto se atribuye al operador con sesión abierta. Máximo una sesión abierta por puesto y una por operador. Si el operador abre sesión en otro puesto, la anterior se cierra con `EndReason = MovedToAnotherWorkstation`.
 - **RN-17 — Relevo:** cuando el titular está en descanso, un relevista abre sesión en ese puesto. La sesión del titular se cierra con `EndReason = Relevo`, pero su estado sigue siendo *DescansoPlanificado*. Al volver, el titular abre sesión con PIN y la sesión del relevista se cierra.
 - **RN-18 — Puesto cubierto:** un puesto habilitado está cubierto si tiene sesión abierta con un operador *Activo* o *Inactivo*.
 - **RN-19 — Cobertura mínima:** si los puestos cubiertos caen por debajo de `MinimumCoverage` del grupo, el tablero muestra una alerta.
@@ -291,3 +299,13 @@ Por eso el modelo calcula los relevistas a partir de los **puestos en servicio**
 | `MinimumCoverage` | A definir | Por grupo |
 | `ActivityPolicy` | `MouseOnly` | Global |
 | `DataRetention` | A definir | Global |
+| `OperatorLockoutAttempts` / `OperatorLockoutDuration` | 5 / 5 min | Global |
+| `OperatorLockoutsBeforeManualUnlock` / `OperatorLockoutWindow` | 3 / 24 h | Global |
+| `EnrollmentCodeLifetime` | 24 h | Global |
+| `AgentSessionLifetime` | 8 h | Global |
+| `LoginTicketLifetime` | 5 min | Global |
+| `WebSessionLifetime` / `WebSessionRevalidationInterval` | 8 h (deslizante) / 5 min | Global |
+| `WebLockoutAttempts` / `WebLockoutDuration` | 5 / 15 min | Global |
+| `WebPasswordMinLength` | 12 | Global |
+
+Los parámetros de identidad se leen de la sección `Identity` de la configuración (`IdentityParameters`); su edición desde la web llega con HU-50.

@@ -1,7 +1,28 @@
-﻿@page "/"
+@page "/"
+@attribute [Authorize(Policy = AuthorizationPolicies.WebUser)]
 
 <PageTitle>BreakManager</PageTitle>
 
-<h1>BreakManager — en construcción</h1>
+<h1>BreakManager</h1>
 
 <p>Sistema de gestión de descansos y presencia del centro de monitoreo.</p>
+
+<AuthorizeView Context="auth">
+    <p>Ingresaste como <strong>@RoleName(auth.User)</strong>@GroupText(auth.User).</p>
+</AuthorizeView>
+
+<AuthorizeView Policy="@AuthorizationPolicies.Administrator">
+    <p>Usá el menú de arriba para administrar puestos, operadores, usuarios y el aviso de privacidad.</p>
+</AuthorizeView>
+
+@code {
+    private static string RoleName(System.Security.Claims.ClaimsPrincipal user) =>
+        user.IsInRole(AuthorizationPolicies.Administrator) ? "Administrador"
+        : user.IsInRole(AuthorizationPolicies.Coordinator) ? "Coordinador"
+        : user.IsInRole(AuthorizationPolicies.Quality) ? "Calidad"
+        : user.IsInRole(AuthorizationPolicies.Supervisor) ? "Supervisor"
+        : "sin rol";
+
+    private static string GroupText(System.Security.Claims.ClaimsPrincipal user) =>
+        user.FindFirst(BreakManagerClaims.Group)?.Value is { } group ? $" del grupo {group}" : string.Empty;
+}

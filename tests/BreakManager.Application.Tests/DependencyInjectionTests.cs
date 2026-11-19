@@ -34,10 +34,12 @@ public sealed class DependencyInjectionTests
         public abstract Task<Result<string>> HandleAsync(PingCommand command, CancellationToken cancellationToken);
     }
 
+    // Sin ValidateOnBuild: Application registra servicios que dependen de puertos que implementa Infrastructure.
+    // Que todo el grafo se resuelva lo verifican los tests de Web, con el contenedor real.
     private static ServiceProvider BuildProvider() =>
         new ServiceCollection()
             .AddApplication(typeof(DependencyInjectionTests).Assembly)
-            .BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+            .BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
 
     [Fact]
     public async Task AddApplication_RegistersCommandHandlersFromScannedAssemblies()

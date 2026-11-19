@@ -12,7 +12,8 @@
       "tests\\BreakManager.Application.Tests\\BreakManager.Application.Tests.csproj",
       "tests\\BreakManager.ArchitectureTests\\BreakManager.ArchitectureTests.csproj",
       "tests\\BreakManager.Domain.Tests\\BreakManager.Domain.Tests.csproj",
-      "tests\\BreakManager.Infrastructure.Tests\\BreakManager.Infrastructure.Tests.csproj"
+      "tests\\BreakManager.Infrastructure.Tests\\BreakManager.Infrastructure.Tests.csproj",
+      "tests\\BreakManager.Web.Tests\\BreakManager.Web.Tests.csproj"
     ]
   }
 }

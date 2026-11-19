@@ -1,0 +1,187 @@
+@page "/admin/usuarios"
+@attribute [Authorize(Policy = AuthorizationPolicies.Administrator)]
+@rendermode InteractiveServer
+@using BreakManager.Application.Identity
+@using BreakManager.Application.Identity.Administration
+@using BreakManager.Domain.Common
+@using BreakManager.Domain.Identity
+@inject HandlerRunner Runner
+@inject IServiceScopeFactory ScopeFactory
+
+<PageTitle>Usuarios — BreakManager</PageTitle>
+
+<h1>Usuarios web</h1>
+
+<StatusMessage Message="@_message" IsError="@_isError" />
+
+<table class="bm-table">
+    <thead>
+        <tr><th>Usuario</th><th>Rol</th><th>Grupo</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var user in _items)
+        {
+            <tr>
+                <td>@user.UserName</td>
+                <td>@RoleName(user.Role)</td>
+                <td>@(user.Group?.ToString() ?? "—")</td>
+                <td>@(user.Active ? (user.LockedOut ? "Bloqueado temporalmente" : "Activo") : "Inactivo")</td>
+                <td>
+                    <button type="button" @onclick="() => SetActiveAsync(user, !user.Active)">@(user.Active ? "Desactivar" : "Activar")</button>
+                    <button type="button" @onclick="() => Edit(user)">Rol / contraseña</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (_editing is not null)
+{
+    <section class="bm-panel">
+        <h2>@_editing.UserName</h2>
+        <label>
+            Rol
+            <select @bind="_editRole">
+                @foreach (var role in Enum.GetValues<WebRole>())
+                {
+                    <option value="@role">@RoleName(role)</option>
+                }
+            </select>
+        </label>
+        <label>
+            Grupo (solo supervisor)
+            <select @bind="_editGroup">
+                <option value="">—</option>
+                @foreach (var group in Enum.GetValues<Group>())
+                {
+                    <option value="@group">@group</option>
+                }
+            </select>
+        </label>
+        <button type="button" @onclick="UpdateRoleAsync">Guardar rol</button>
+        <label>Contraseña temporal <input type="password" @bind="_editPassword" autocomplete="new-password" /></label>
+        <button type="button" @onclick="ResetPasswordAsync">Resetear contraseña</button>
+        <button type="button" @onclick="() => _editing = null">Cerrar</button>
+    </section>
+}
+
+<h2>Alta de usuario</h2>
+
+<EditForm Model="_new" OnValidSubmit="CreateAsync" FormName="new-user" class="bm-form bm-inline">
+    <label>Usuario <InputText @bind-Value="_new.UserName" autocomplete="off" /></label>
+    <label>
+        Rol
+        <InputSelect @bind-Value="_new.Role">
+            @foreach (var role in Enum.GetValues<WebRole>())
+            {
+                <option value="@role">@RoleName(role)</option>
+            }
+        </InputSelect>
+    </label>
+    <label>
+        Grupo (solo supervisor)
+        <InputSelect @bind-Value="_new.Group">
+            <option value="">—</option>
+            @foreach (var group in Enum.GetValues<Group>())
+            {
+                <option value="@group">@group</option>
+            }
+        </InputSelect>
+    </label>
+    <label>Contraseña temporal <InputText type="password" @bind-Value="_new.Password" autocomplete="new-password" /></label>
+    <button type="submit">Agregar</button>
+</EditForm>
+
+@code {
+    private IReadOnlyList<UserAccountSummary> _items = [];
+    private readonly NewUser _new = new();
+    private UserAccountSummary? _editing;
+    private WebRole _editRole;
+    private Group? _editGroup;
+    private string _editPassword = string.Empty;
+    private string? _message;
+    private bool _isError;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        _items = await scope.ServiceProvider.GetRequiredService<IUserAccountService>().ListAsync(CancellationToken.None);
+    }
+
+    private static string RoleName(WebRole role) => role switch
+    {
+        WebRole.Administrator => "Administrador",
+        WebRole.Coordinator => "Coordinador",
+        WebRole.Quality => "Calidad",
+        WebRole.Supervisor => "Supervisor",
+        _ => role.ToString(),
+    };
+
+    private void Edit(UserAccountSummary user)
+    {
+        _editing = user;
+        _editRole = user.Role;
+        _editGroup = user.Group;
+        _editPassword = string.Empty;
+    }
+
+    private async Task CreateAsync()
+    {
+        var result = await Runner.SendAsync<CreateUserCommand, Result<Guid>>(
+            new CreateUserCommand(_new.UserName, _new.Role, _new.Group, _new.Password));
+        Show(result, $"Usuario {_new.UserName} creado. Va a tener que cambiar la contraseña al ingresar.");
+        _new.Password = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task SetActiveAsync(UserAccountSummary user, bool active)
+    {
+        var actor = (await AuthenticationState).User.GetUserId();
+        var result = await Runner.SendAsync<SetUserActiveCommand, Result>(new SetUserActiveCommand(user.Id, active, actor));
+        Show(result, active ? "Usuario activado." : "Usuario desactivado: su sesión se corta en la próxima revalidación.");
+        await LoadAsync();
+    }
+
+    private async Task UpdateRoleAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        var result = await Runner.SendAsync<UpdateUserRoleCommand, Result>(new UpdateUserRoleCommand(_editing.Id, _editRole, _editGroup));
+        Show(result, "Rol actualizado.");
+        await LoadAsync();
+    }
+
+    private async Task ResetPasswordAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        var result = await Runner.SendAsync<ResetUserPasswordCommand, Result>(new ResetUserPasswordCommand(_editing.Id, _editPassword));
+        Show(result, "Contraseña reseteada. El usuario la tiene que cambiar al ingresar.");
+        _editPassword = string.Empty;
+    }
+
+    private void Show(Result result, string success)
+    {
+        _isError = result.IsFailure;
+        _message = result.IsFailure ? result.Error.Message : success;
+    }
+
+    private sealed class NewUser
+    {
+        public string UserName { get; set; } = string.Empty;
+        public WebRole Role { get; set; } = WebRole.Supervisor;
+        public Group? Group { get; set; }
+        public string Password { get; set; } = string.Empty;
+    }
+}

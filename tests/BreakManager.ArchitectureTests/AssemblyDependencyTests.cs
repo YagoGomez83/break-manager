@@ -28,7 +28,8 @@ public sealed class AssemblyDependencyTests
                 WebProject,
                 "Microsoft.EntityFrameworkCore",
                 "Npgsql",
-                "Microsoft.AspNetCore")
+                "Microsoft.AspNetCore",
+                "Microsoft.Extensions.Identity")
             .GetResult();
 
         AssertSuccessful(result);
@@ -43,6 +44,7 @@ public sealed class AssemblyDependencyTests
                 "System.Windows",
                 "Microsoft.Win32",
                 "H.NotifyIcon",
+                "System.Security.Cryptography.ProtectedData",
                 AgentWindowsProject,
                 WebProject)
             .GetResult();
@@ -50,7 +52,8 @@ public sealed class AssemblyDependencyTests
         AssertSuccessful(result);
         Assert.DoesNotContain(
             AgentCoreAssembly.GetReferencedAssemblies(),
-            reference => reference.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase");
+            reference => reference.Name is "PresentationFramework" or "PresentationCore" or "WindowsBase"
+                or "System.Security.Cryptography.ProtectedData");
     }
 
     [Fact]

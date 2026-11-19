@@ -1,0 +1,93 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@using System.ComponentModel.DataAnnotations
+@using BreakManager.Application.Common
+@using BreakManager.Application.Common.Security
+@using BreakManager.Infrastructure.Identity
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject ISecurityEventLog SecurityEvents
+@inject IUnitOfWork UnitOfWork
+@inject TimeProvider Time
+@inject NavigationManager Navigation
+
+<PageTitle>Ingresar — BreakManager</PageTitle>
+
+<h1>Ingresar</h1>
+
+@if (_error is not null)
+{
+    <p class="bm-error" role="alert">@_error</p>
+}
+
+<EditForm Model="Input" method="post" OnValidSubmit="LoginAsync" FormName="login" class="bm-form">
+    <DataAnnotationsValidator />
+    <label>
+        Usuario
+        <InputText @bind-Value="Input.UserName" autocomplete="username" />
+    </label>
+    <ValidationMessage For="() => Input.UserName" />
+    <label>
+        Contraseña
+        <InputText type="password" @bind-Value="Input.Password" autocomplete="current-password" />
+    </label>
+    <ValidationMessage For="() => Input.Password" />
+    <button type="submit">Ingresar</button>
+</EditForm>
+
+@code {
+    private string? _error;
+
+    [SupplyParameterFromForm]
+    private LoginInput Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override void OnInitialized() => Input ??= new();
+
+    private async Task LoginAsync()
+    {
+        Input ??= new();
+        var result = await SignInManager.PasswordSignInAsync(Input.UserName, Input.Password, isPersistent: false, lockoutOnFailure: true);
+        if (result.Succeeded)
+        {
+            Navigation.NavigateTo(SafeReturnUrl(ReturnUrl), forceLoad: true);
+            return;
+        }
+
+        await RecordFailureAsync(result.IsLockedOut);
+        _error = result.IsLockedOut
+            ? "La cuenta está bloqueada por intentos fallidos. Probá más tarde o consultá con un administrador."
+            : "Usuario o contraseña incorrectos.";
+    }
+
+    private async Task RecordFailureAsync(bool lockedOut)
+    {
+        var user = await UserManager.FindByNameAsync(Input.UserName);
+        var now = Time.GetUtcNow();
+        SecurityEvents.Record(new SecurityEvent(
+            Guid.CreateVersion7(now), SecurityEventType.UserLoginFailed, now, SecurityActorType.User, user?.Id, WorkstationId: null));
+        if (lockedOut && user is not null)
+        {
+            SecurityEvents.Record(new SecurityEvent(
+                Guid.CreateVersion7(now), SecurityEventType.UserLockedOut, now, SecurityActorType.User, user.Id, WorkstationId: null));
+        }
+
+        await UnitOfWork.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Solo rutas locales: evita redirecciones abiertas.</summary>
+    private static string SafeReturnUrl(string? returnUrl) =>
+        returnUrl is { Length: > 1 } && returnUrl[0] == '/' && returnUrl[1] is not ('/' or '\\') ? returnUrl : "/";
+
+    private sealed class LoginInput
+    {
+        [Required(ErrorMessage = "Ingresá el usuario.")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Ingresá la contraseña.")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

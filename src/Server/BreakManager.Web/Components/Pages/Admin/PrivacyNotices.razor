@@ -1,0 +1,65 @@
+@page "/admin/avisos"
+@attribute [Authorize(Policy = AuthorizationPolicies.Administrator)]
+@rendermode InteractiveServer
+@using BreakManager.Application.Identity.Administration
+@using BreakManager.Application.Identity.Queries
+@using BreakManager.Domain.Common
+@inject HandlerRunner Runner
+
+<PageTitle>Aviso de privacidad — BreakManager</PageTitle>
+
+<h1>Aviso de privacidad</h1>
+
+<p>
+    Cada publicación crea una versión nueva. Los operadores la tienen que aceptar en su próximo ingreso.
+    Las versiones anteriores se conservan y no se pueden editar.
+</p>
+
+<StatusMessage Message="@_message" IsError="@_isError" />
+
+<h2>Publicar una versión nueva</h2>
+<textarea class="bm-textarea" rows="10" @bind="_text" aria-label="Texto del aviso"></textarea>
+<button type="button" @onclick="PublishAsync">Publicar</button>
+
+<h2>Versiones publicadas</h2>
+@if (_items.Count == 0)
+{
+    <p>Todavía no hay ninguna versión publicada: los operadores no pueden ingresar hasta que se publique una.</p>
+}
+
+@foreach (var notice in _items)
+{
+    <article class="bm-panel">
+        <h3>Versión @notice.Version — @OperationalTime.Format(notice.PublishedAt)</h3>
+        <pre class="bm-notice">@notice.Text</pre>
+    </article>
+}
+
+@code {
+    private IReadOnlyList<PrivacyNoticeListItem> _items = [];
+    private string _text = string.Empty;
+    private string? _message;
+    private bool _isError;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() =>
+        _items = await Runner.QueryAsync<ListPrivacyNoticesQuery, IReadOnlyList<PrivacyNoticeListItem>>(new ListPrivacyNoticesQuery());
+
+    private async Task PublishAsync()
+    {
+        var actor = (await AuthenticationState).User.GetUserId();
+        var result = await Runner.SendAsync<PublishPrivacyNoticeCommand, Result<int>>(new PublishPrivacyNoticeCommand(_text, actor));
+        _isError = result.IsFailure;
+        _message = result.IsFailure ? result.Error.Message : $"Versión {result.Value} publicada.";
+        if (result.IsSuccess)
+        {
+            _text = string.Empty;
+        }
+
+        await LoadAsync();
+    }
+}

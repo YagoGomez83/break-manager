@@ -15,7 +15,7 @@ RUN --mount=type=secret,id=extra_ca,required=false \
     fi
 
 # Restore en una capa propia para aprovechar la caché.
-COPY global.json Directory.Build.props Directory.Packages.props ./
+COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
 COPY src/Server/BreakManager.Domain/BreakManager.Domain.csproj src/Server/BreakManager.Domain/
 COPY src/Server/BreakManager.Application/BreakManager.Application.csproj src/Server/BreakManager.Application/
 COPY src/Server/BreakManager.Infrastructure/BreakManager.Infrastructure.csproj src/Server/BreakManager.Infrastructure/

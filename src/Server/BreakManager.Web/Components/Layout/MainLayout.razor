@@ -1,6 +1,31 @@
 ﻿@inherits LayoutComponentBase
 
-@Body
+<header class="bm-header">
+    <a class="bm-brand" href="/">BreakManager</a>
+    <AuthorizeView Policy="@AuthorizationPolicies.Administrator">
+        <nav class="bm-nav" aria-label="Administración">
+            <NavLink href="/admin/puestos">Puestos</NavLink>
+            <NavLink href="/admin/operadores">Operadores</NavLink>
+            <NavLink href="/admin/usuarios">Usuarios</NavLink>
+            <NavLink href="/admin/avisos">Aviso de privacidad</NavLink>
+            <NavLink href="/admin/sesiones">Sesiones abiertas</NavLink>
+        </nav>
+    </AuthorizeView>
+    <AuthorizeView>
+        <Authorized>
+            <form class="bm-logout" method="post" action="/logout">
+                <AntiforgeryToken />
+                <input type="hidden" name="origin" value="layout" />
+                <span>@context.User.Identity?.Name</span>
+                <button type="submit">Salir</button>
+            </form>
+        </Authorized>
+    </AuthorizeView>
+</header>
+
+<main class="bm-main">
+    @Body
+</main>
 
 <div id="blazor-error-ui" data-nosnippet>
     Ocurrió un error inesperado.

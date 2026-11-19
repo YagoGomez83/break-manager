@@ -19,7 +19,10 @@ public static class EnrollmentCodeFormat
 public sealed record GenerateEnrollmentCodeCommand(Guid WorkstationId, Guid ActorUserId);
 
 /// <summary>El código en claro se muestra una sola vez.</summary>
-public sealed record GeneratedEnrollmentCode(string Code, DateTimeOffset ExpiresAt);
+public sealed record GeneratedEnrollmentCode(string Code, DateTimeOffset ExpiresAt)
+{
+    public override string ToString() => $"GeneratedEnrollmentCode {{ ExpiresAt = {ExpiresAt:O} }}";
+}
 
 internal sealed class GenerateEnrollmentCodeHandler(
     IWorkstationRepository workstations,
@@ -66,10 +69,16 @@ internal sealed class GenerateEnrollmentCodeHandler(
     }
 }
 
-public sealed record RedeemEnrollmentCodeCommand(string Code, string ClientIp);
+public sealed record RedeemEnrollmentCodeCommand(string Code, string ClientIp)
+{
+    public override string ToString() => $"RedeemEnrollmentCodeCommand {{ ClientIp = {ClientIp} }}";
+}
 
 /// <summary>El token de dispositivo en claro se entrega una sola vez.</summary>
-public sealed record EnrolledDevice(Guid WorkstationId, int WorkstationNumber, string DeviceToken);
+public sealed record EnrolledDevice(Guid WorkstationId, int WorkstationNumber, string DeviceToken)
+{
+    public override string ToString() => $"EnrolledDevice {{ WorkstationId = {WorkstationId}, WorkstationNumber = {WorkstationNumber} }}";
+}
 
 internal sealed class RedeemEnrollmentCodeHandler(
     IWorkstationRepository workstations,

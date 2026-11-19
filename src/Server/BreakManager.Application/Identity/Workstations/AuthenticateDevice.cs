@@ -10,7 +10,10 @@ namespace BreakManager.Application.Identity.Workstations;
 /// Autentica un request del agente: token de dispositivo y, opcionalmente, token de sesión (ADR-0010).
 /// Registra el último uso y el cambio de IP del token.
 /// </summary>
-public sealed record AuthenticateDeviceCommand(string DeviceToken, string? SessionToken, string ClientIp);
+public sealed record AuthenticateDeviceCommand(string DeviceToken, string? SessionToken, string ClientIp)
+{
+    public override string ToString() => $"AuthenticateDeviceCommand {{ ClientIp = {ClientIp} }}";
+}
 
 public sealed record AuthenticatedDevice(Guid WorkstationId, Guid CredentialId, int WorkstationNumber, SessionInfo? Session);
 

@@ -1,6 +1,7 @@
 using System.Reflection;
 using BreakManager.Application.Abstractions;
 using BreakManager.Application.Identity;
+using BreakManager.Application.Identity.Login;
 using BreakManager.Application.Presence;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +39,7 @@ public static class DependencyInjection
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<IdentityParameters>, IdentityParametersValidator>());
         services.TryAddScoped<IWorkstationSessionService, WorkstationSessionService>();
+        services.TryAddScoped<IOperatorIdentityProvider, ManualLoginIdentityProvider>();
 
         return services;
     }

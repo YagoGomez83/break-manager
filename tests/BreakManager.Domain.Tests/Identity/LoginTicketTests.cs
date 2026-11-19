@@ -79,6 +79,16 @@ public sealed class LoginTicketTests
         Assert.True(ticket.Consume(T0.AddMinutes(1), Device, acceptedNoticeVersion: null).IsSuccess);
     }
 
+    [Fact]
+    public void Validate_ChecksLikeConsume_ButDoesNotConsume()
+    {
+        var ticket = NewTicket(noticeVersion: 2);
+
+        Assert.True(ticket.Validate(T0.AddMinutes(1), Device, acceptedNoticeVersion: 2).IsSuccess);
+        Assert.Equal(LoginTicketErrors.WrongDevice, ticket.Validate(T0, Guid.NewGuid(), 2).Error);
+        Assert.Null(ticket.ConsumedAt);
+    }
+
     private static LoginTicket NewTicket(int? noticeVersion) =>
         LoginTicket.Issue(Guid.NewGuid(), Guid.NewGuid(), Device, "hash", noticeVersion, requiresPinChange: false, T0, Lifetime);
 }

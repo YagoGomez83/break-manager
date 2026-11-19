@@ -69,6 +69,18 @@ public sealed class LoginTicket : AggregateRoot<Guid>
     /// </summary>
     public Result Consume(DateTimeOffset now, Guid deviceCredentialId, int? acceptedNoticeVersion)
     {
+        var validation = Validate(now, deviceCredentialId, acceptedNoticeVersion);
+        if (validation.IsSuccess)
+        {
+            ConsumedAt = now;
+        }
+
+        return validation;
+    }
+
+    /// <summary>Las mismas comprobaciones que <see cref="Consume"/>, sin consumir el ticket.</summary>
+    public Result Validate(DateTimeOffset now, Guid deviceCredentialId, int? acceptedNoticeVersion)
+    {
         if (deviceCredentialId != DeviceCredentialId)
         {
             return Result.Failure(LoginTicketErrors.WrongDevice);
@@ -89,7 +101,6 @@ public sealed class LoginTicket : AggregateRoot<Guid>
             return Result.Failure(LoginTicketErrors.NoticeVersionMismatch);
         }
 
-        ConsumedAt = now;
         return Result.Success();
     }
 }

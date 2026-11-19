@@ -15,6 +15,11 @@ Estado: 🔴 bloquea una fase · 🟡 se puede avanzar con un supuesto · ✅ re
 | Q13 | Recursos de la VM (CPU, RAM, disco) y sistema operativo | Dimensionamiento | 2 vCPU, 4 GB RAM, 50 GB | Fase 7 | 🟡 |
 | Q15 | ¿Quién gestiona el esquema base: Coordinación, o cada supervisor parte de su propio esquema? | Permisos (RN-33) | Coordinación gestiona el base; los supervisores lo ajustan para su grupo | Fase 3 | 🟡 |
 | Q16 | ¿El operador puede cerrar el agente desde la bandeja ("Salir")? ¿O hace falta PIN o permiso de supervisor? | HU-26, RN-15 | Fase 1: "Salir" sin restricción (lo pide la spec); el cierre se ve como *Desconectado* | Fase 4 | 🟡 |
+| Q17 | Políticas de credenciales: PIN de 4–6 dígitos; contraseña web de 12 caracteres como mínimo; bloqueo web tras 5 intentos por 15 min; código de enrolamiento válido 24 h; token de sesión del agente válido 8 h. ¿Son correctos? | HU-01, HU-03, HU-04 | Los valores indicados, todos configurables | Fase 2 | 🟡 |
+| Q18 | ¿Con qué motivo se cierra una sesión (a) por revocación del puesto y (b) cuando el mismo operador abre sesión en otro puesto? | RN-16, RN-17, `EndReason` | (a) nuevo motivo `Revocation`; (b) `Relevo` | Fase 2 | 🟡 |
+| Q19 | ¿Se abre la sesión antes de aceptar el aviso, o solo después? | HU-01, HU-02 | Solo después: un ticket de un solo uso de 5 min une el login con la aceptación, para que un aviso sin aceptar no cierre la sesión de otro por relevo | Fase 2 | 🟡 |
+| Q20 | Si no hay ningún aviso de privacidad publicado, ¿se bloquea el login del agente? | HU-02, ADR-0006 | Sí: no se opera sin aviso publicado | Fase 2 | 🟡 |
+| Q21 | ¿Supervisor, Coordinador y Calidad necesitan alguna página en la Fase 2? | HU-03 | No: solo inicio; sus páginas llegan en las Fases 3 a 6 | Fase 2 | 🟡 |
 
 ## Decisiones menores tomadas sin spec (Fase 1)
 

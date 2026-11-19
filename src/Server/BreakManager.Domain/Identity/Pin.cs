@@ -70,4 +70,6 @@ public static class PinErrors
     public static readonly Error Trivial = new(
         "Pin.Trivial",
         "El PIN es demasiado fácil: no uses dígitos repetidos, secuencias ni tu legajo.");
+
+    public static readonly Error SameAsCurrent = new("Pin.SameAsCurrent", "El PIN nuevo tiene que ser distinto del actual.");
 }

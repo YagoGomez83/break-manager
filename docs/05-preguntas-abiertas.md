@@ -47,6 +47,7 @@ Elegidas por simplicidad; se pueden revisar en el PR.
 | Tablas de Identity | Con nombres snake_case (`users`, `roles`, `user_roles`, ...), igual que el resto de la base. |
 | Acceso denegado | La página `/acceso-denegado` responde `403`; el middleware de cookies redirige ahí cuando el rol no alcanza. |
 | Credencial del agente | Archivo `%ProgramData%\BreakManager\Agent\credential.bin`, cifrado con DPAPI (`LocalMachine`). DPAPI viene en el runtime de Windows Desktop: no se agregó el paquete `System.Security.Cryptography.ProtectedData`. |
+| Cookie web en desarrollo | `Secure` siempre, salvo en `Development`, donde es `SameAsRequest`: el compose de desarrollo sirve por HTTP y una cookie `Secure` no vuelve por HTTP. |
 | Agente y HTTPS en desarrollo | El compose de desarrollo publica la app por HTTP, pero el agente solo acepta HTTPS. Para probar el agente se usa `dotnet run --launch-profile https` con el certificado de desarrollo (`desarrollo.md`). |
 | Lista de contraseñas comunes | `100k-most-used-passwords-NCSC.txt` de SecLists (MIT), en minúsculas y con gzip, como recurso embebido de Infrastructure. |
 | Fallback de archivos de `MapStaticAssets` | No admite metadata de autorización. Lo cubre la `FallbackPolicy` (usuario autenticado) y hay un test que lo demuestra. |

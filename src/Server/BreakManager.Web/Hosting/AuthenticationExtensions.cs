@@ -22,6 +22,7 @@ internal static class AuthenticationExtensions
     public static WebApplicationBuilder AddBreakManagerAuthentication(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
+        var isDevelopment = builder.Environment.IsDevelopment();
 
         services.AddOptions<IdentityParameters>()
             .BindConfiguration(IdentityParameters.SectionName)
@@ -43,7 +44,8 @@ internal static class AuthenticationExtensions
             {
                 cookie.Cookie.Name = "BreakManager.Auth";
                 cookie.Cookie.HttpOnly = true;
-                cookie.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                // Secure siempre, salvo en Development: el compose de desarrollo sirve por HTTP (TLS llega en la Fase 7).
+                cookie.Cookie.SecurePolicy = isDevelopment ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
                 cookie.Cookie.SameSite = SameSiteMode.Strict;
                 cookie.ExpireTimeSpan = parameters.Value.WebSessionLifetime;
                 cookie.SlidingExpiration = true;

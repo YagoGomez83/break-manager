@@ -46,7 +46,9 @@ try
     app.MapStaticAssets().AllowAnonymous();
     app.MapAgentEndpoints();
     app.MapAccountEndpoints();
-    app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+    app.MapRazorComponents<App>()
+        .AddInteractiveServerRenderMode()
+        .RequireAuthorization(BreakManager.Web.Security.AuthorizationPolicies.WebUser);
 
     await app.RunAsync().ConfigureAwait(false);
     return 0;

@@ -6,3 +6,16 @@
 <h1>Acceso denegado</h1>
 <p>Tu rol no tiene permiso para ver esta página.</p>
 <p><a href="/">Volver al inicio</a></p>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (HttpContext is not null)
+        {
+            HttpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+        }
+    }
+}

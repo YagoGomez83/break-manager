@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BreakManager.Domain.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BreakManager.Infrastructure.Tests", "tests\BreakManager.Infrastructure.Tests\BreakManager.Infrastructure.Tests.csproj", "{436CBF68-BAA0-4043-B99D-90B8F8FDB67E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BreakManager.Web.Tests", "tests\BreakManager.Web.Tests\BreakManager.Web.Tests.csproj", "{79119D43-5101-4999-9412-BCAA1D186C58}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -191,6 +193,18 @@ Global
 		{436CBF68-BAA0-4043-B99D-90B8F8FDB67E}.Release|x64.Build.0 = Release|Any CPU
 		{436CBF68-BAA0-4043-B99D-90B8F8FDB67E}.Release|x86.ActiveCfg = Release|Any CPU
 		{436CBF68-BAA0-4043-B99D-90B8F8FDB67E}.Release|x86.Build.0 = Release|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Debug|x64.Build.0 = Debug|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Debug|x86.Build.0 = Debug|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Release|x64.ActiveCfg = Release|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Release|x64.Build.0 = Release|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Release|x86.ActiveCfg = Release|Any CPU
+		{79119D43-5101-4999-9412-BCAA1D186C58}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -211,5 +225,6 @@ Global
 		{FE3DB74D-AAAD-4B71-831B-1595D49FED04} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{B3B4C15A-1B5A-412C-87A0-3792C0A154DE} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{436CBF68-BAA0-4043-B99D-90B8F8FDB67E} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{79119D43-5101-4999-9412-BCAA1D186C58} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

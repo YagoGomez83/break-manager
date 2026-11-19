@@ -36,3 +36,44 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* --- BreakManager: layout y componentes básicos (Fase 2) --- */
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    color: #1d2329;
+    background: #f6f7f9;
+}
+
+.bm-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #1f3a5f;
+    color: #fff;
+}
+
+.bm-header a { color: #fff; text-decoration: none; }
+.bm-brand { font-weight: 700; font-size: 1.1rem; }
+.bm-nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+.bm-nav a.active { text-decoration: underline; }
+.bm-logout { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
+
+.bm-main { padding: 1.5rem; max-width: 72rem; }
+
+.bm-form { display: flex; flex-direction: column; gap: 0.5rem; max-width: 24rem; }
+.bm-form.bm-inline { flex-direction: row; flex-wrap: wrap; align-items: flex-end; max-width: none; }
+.bm-form label { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.bm-table { border-collapse: collapse; width: 100%; background: #fff; margin: 1rem 0; }
+.bm-table th, .bm-table td { border-bottom: 1px solid #dde1e6; padding: 0.4rem 0.6rem; text-align: left; }
+
+.bm-panel, .bm-code { background: #fff; border: 1px solid #dde1e6; border-radius: 6px; padding: 1rem; margin: 1rem 0; }
+.bm-code-value { font-family: ui-monospace, monospace; font-size: 1.6rem; letter-spacing: 0.2rem; }
+.bm-notice { white-space: pre-wrap; font-family: inherit; }
+.bm-textarea { width: 100%; max-width: 48rem; display: block; margin-bottom: 0.5rem; }
+
+.bm-error { color: #a4161a; }
+.bm-ok { color: #1b6e2d; }
+button.bm-danger { color: #a4161a; }

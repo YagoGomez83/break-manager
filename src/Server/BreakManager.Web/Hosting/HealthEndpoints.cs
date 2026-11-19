@@ -10,8 +10,9 @@ internal static class HealthEndpoints
     /// </summary>
     public static IEndpointRouteBuilder MapHealthEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapHealthChecks("/health/live", new() { Predicate = _ => false });
-        endpoints.MapHealthChecks("/health/ready", new() { Predicate = check => check.Tags.Contains(ReadyTag) });
+        // Anónimos a propósito: los consulta el orquestador (Docker) sin credenciales.
+        endpoints.MapHealthChecks("/health/live", new() { Predicate = _ => false }).AllowAnonymous();
+        endpoints.MapHealthChecks("/health/ready", new() { Predicate = check => check.Tags.Contains(ReadyTag) }).AllowAnonymous();
         return endpoints;
     }
 }

@@ -1,0 +1,162 @@
+@page "/admin/operadores"
+@attribute [Authorize(Policy = AuthorizationPolicies.Administrator)]
+@rendermode InteractiveServer
+@using BreakManager.Application.Identity.Administration
+@using BreakManager.Application.Identity.Queries
+@using BreakManager.Domain.Common
+@using BreakManager.Domain.Identity
+@inject HandlerRunner Runner
+@inject TimeProvider Time
+
+<PageTitle>Operadores — BreakManager</PageTitle>
+
+<h1>Operadores</h1>
+
+<StatusMessage Message="@_message" IsError="@_isError" />
+
+<table class="bm-table">
+    <thead>
+        <tr>
+            <th>Legajo</th><th>Nombre</th><th>Grupo</th><th>Puesto habitual</th><th>Estado</th><th>PIN</th><th>Bloqueo</th><th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var op in _items)
+        {
+            <tr>
+                <td>@op.EmployeeNumber</td>
+                <td>@op.FullName</td>
+                <td>@op.Group</td>
+                <td>@(op.HomeWorkstationNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "—")</td>
+                <td>@(op.Active ? "Activo" : "Inactivo")</td>
+                <td>@(op.MustChangePin ? "Temporal" : "Definitivo")</td>
+                <td>@LockText(op)</td>
+                <td>
+                    <button type="button" @onclick="() => SetActiveAsync(op, !op.Active)">@(op.Active ? "Desactivar" : "Activar")</button>
+                    @if (IsLocked(op))
+                    {
+                        <button type="button" @onclick="() => UnlockAsync(op)">Desbloquear</button>
+                    }
+                    <button type="button" @onclick="() => _pinFor = op">PIN temporal</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (_pinFor is not null)
+{
+    <section class="bm-panel">
+        <h2>PIN temporal para el legajo @_pinFor.EmployeeNumber</h2>
+        <p>El operador lo va a tener que cambiar en el próximo ingreso. 6 dígitos, sin repetidos ni secuencias.</p>
+        <label>PIN temporal <input type="password" inputmode="numeric" maxlength="6" @bind="_temporaryPin" autocomplete="off" /></label>
+        <button type="button" @onclick="AssignPinAsync">Asignar</button>
+        <button type="button" @onclick="() => { _pinFor = null; _temporaryPin = string.Empty; }">Cancelar</button>
+    </section>
+}
+
+<h2>Alta de operador</h2>
+
+<EditForm Model="_new" OnValidSubmit="CreateAsync" FormName="new-operator" class="bm-form bm-inline">
+    <label>Legajo <InputText @bind-Value="_new.EmployeeNumber" /></label>
+    <label>Nombre <InputText @bind-Value="_new.FullName" /></label>
+    <label>
+        Grupo
+        <InputSelect @bind-Value="_new.Group">
+            @foreach (var group in Enum.GetValues<Group>())
+            {
+                <option value="@group">@group</option>
+            }
+        </InputSelect>
+    </label>
+    <label>Puesto habitual <InputNumber @bind-Value="_new.HomeWorkstationNumber" min="1" max="20" /></label>
+    <label>PIN temporal <InputText type="password" inputmode="numeric" maxlength="6" @bind-Value="_new.TemporaryPin" autocomplete="off" /></label>
+    <button type="submit">Agregar</button>
+</EditForm>
+
+@code {
+    private IReadOnlyList<OperatorListItem> _items = [];
+    private readonly NewOperator _new = new();
+    private OperatorListItem? _pinFor;
+    private string _temporaryPin = string.Empty;
+    private string? _message;
+    private bool _isError;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationState { get; set; } = default!;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() =>
+        _items = await Runner.QueryAsync<ListOperatorsQuery, IReadOnlyList<OperatorListItem>>(new ListOperatorsQuery());
+
+    private bool IsLocked(OperatorListItem op) => op.RequiresManualUnlock || op.LockedUntil > Time.GetUtcNow();
+
+    private string LockText(OperatorListItem op) =>
+        op.RequiresManualUnlock ? "Bloqueado hasta desbloqueo manual"
+        : op.LockedUntil > Time.GetUtcNow() ? $"Bloqueado hasta {OperationalTime.Format(op.LockedUntil)}"
+        : "—";
+
+    private async Task CreateAsync()
+    {
+        var result = await Runner.SendAsync<CreateOperatorCommand, Result<Guid>>(new CreateOperatorCommand(
+            _new.EmployeeNumber, _new.FullName, _new.Group, _new.HomeWorkstationNumber, _new.TemporaryPin));
+        Show(result, $"Operador {_new.EmployeeNumber} agregado.");
+        if (result.IsSuccess)
+        {
+            _new.TemporaryPin = string.Empty;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task SetActiveAsync(OperatorListItem op, bool active)
+    {
+        var result = await Runner.SendAsync<SetOperatorActiveCommand, Result>(new SetOperatorActiveCommand(op.Id, active));
+        Show(result, active ? "Operador activado." : "Operador desactivado.");
+        await LoadAsync();
+    }
+
+    private async Task UnlockAsync(OperatorListItem op)
+    {
+        var result = await Runner.SendAsync<UnlockOperatorCommand, Result>(new UnlockOperatorCommand(op.Id, await ActorAsync()));
+        Show(result, $"Legajo {op.EmployeeNumber} desbloqueado.");
+        await LoadAsync();
+    }
+
+    private async Task AssignPinAsync()
+    {
+        if (_pinFor is null)
+        {
+            return;
+        }
+
+        var result = await Runner.SendAsync<AssignTemporaryPinCommand, Result>(
+            new AssignTemporaryPinCommand(_pinFor.Id, _temporaryPin, await ActorAsync()));
+        Show(result, $"PIN temporal asignado al legajo {_pinFor.EmployeeNumber}.");
+        _temporaryPin = string.Empty;
+        if (result.IsSuccess)
+        {
+            _pinFor = null;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task<Guid> ActorAsync() => (await AuthenticationState).User.GetUserId();
+
+    private void Show(Result result, string success)
+    {
+        _isError = result.IsFailure;
+        _message = result.IsFailure ? result.Error.Message : success;
+    }
+
+    private sealed class NewOperator
+    {
+        public string EmployeeNumber { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public Group Group { get; set; } = Group.C;
+        public int? HomeWorkstationNumber { get; set; }
+        public string TemporaryPin { get; set; } = string.Empty;
+    }
+}

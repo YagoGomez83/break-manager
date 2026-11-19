@@ -1,6 +1,7 @@
 using BreakManager.Application;
 using BreakManager.Infrastructure;
 using BreakManager.Web.Components;
+using BreakManager.Web.Endpoints;
 using BreakManager.Web.Hosting;
 using Serilog;
 
@@ -13,6 +14,8 @@ try
     builder.AddObservability();
     builder.Services.AddApplication();
     builder.Services.AddInfrastructure(builder.Configuration);
+    builder.AddBreakManagerAuthentication();
+    builder.Services.AddScoped<HandlerRunner>();
     builder.Services.AddHealthChecks().AddInfrastructureHealthChecks(HealthEndpoints.ReadyTag);
     builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
@@ -33,10 +36,16 @@ try
     app.UseSerilogRequestLogging();
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
+    app.UseRateLimiter();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.UseMustChangePassword();
     app.UseAntiforgery();
 
     app.MapHealthEndpoints();
-    app.MapStaticAssets();
+    app.MapStaticAssets().AllowAnonymous();
+    app.MapAgentEndpoints();
+    app.MapAccountEndpoints();
     app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
     await app.RunAsync().ConfigureAwait(false);
@@ -51,3 +60,6 @@ finally
 {
     await Log.CloseAndFlushAsync().ConfigureAwait(false);
 }
+
+/// <summary>Punto de entrada; público para los tests de integración (WebApplicationFactory).</summary>
+public partial class Program;

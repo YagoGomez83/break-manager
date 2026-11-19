@@ -1,0 +1,47 @@
+@page "/admin/sesiones"
+@attribute [Authorize(Policy = AuthorizationPolicies.Administrator)]
+@rendermode InteractiveServer
+@using BreakManager.Application.Identity.Queries
+@inject HandlerRunner Runner
+
+<PageTitle>Sesiones abiertas — BreakManager</PageTitle>
+
+<h1>Sesiones abiertas</h1>
+
+<p>Operadores con sesión abierta en un puesto. Se actualiza al recargar; el tablero en vivo llega en la Fase 5.</p>
+
+<button type="button" @onclick="LoadAsync">Actualizar</button>
+
+@if (_items.Count == 0)
+{
+    <p>No hay sesiones abiertas.</p>
+}
+else
+{
+    <table class="bm-table">
+        <thead>
+            <tr><th>Puesto</th><th>Hostname</th><th>Legajo</th><th>Inicio</th><th>Vence</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var session in _items)
+            {
+                <tr>
+                    <td>@session.WorkstationNumber</td>
+                    <td>@session.Hostname</td>
+                    <td>@session.EmployeeNumber</td>
+                    <td>@OperationalTime.Format(session.StartedAt)</td>
+                    <td>@OperationalTime.Format(session.ExpiresAt)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<OpenSessionListItem> _items = [];
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync() =>
+        _items = await Runner.QueryAsync<ListOpenSessionsQuery, IReadOnlyList<OpenSessionListItem>>(new ListOpenSessionsQuery());
+}

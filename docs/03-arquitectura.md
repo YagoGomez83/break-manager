@@ -90,7 +90,10 @@ BreakManager.sln
 | Servidor → agente: plan, reprogramaciones, parámetros | Push SignalR al grupo del puesto | Al conectar, el agente pide el estado completo (snapshot). |
 | Web → servidor | Blazor Interactive Server (circuito SignalR) + Minimal APIs para exportaciones | |
 | Servidor → tablero | Notificaciones SignalR a los grupos por turno | |
-| Login del agente | `POST /api/agent/sessions` (HTTPS) → token de sesión corto | Lleva token de dispositivo + legajo + PIN. |
+| Enrolamiento del puesto | `POST /api/agent/enrollment` (HTTPS, anónimo, con rate limiting) | Canjea el código de un solo uso por el token de dispositivo (ADR-0010). |
+| Login del agente | `POST /api/agent/sessions` → `Opened` (token de sesión) o `StepsRequired` (ticket + aviso y/o cambio de PIN) | `Authorization: Device <token>` + legajo + PIN. |
+| Completar el login | `POST /api/agent/sessions/completion` | Ticket + versión del aviso aceptada + PIN nuevo. Abre la sesión en la misma transacción. |
+| Cerrar sesión | `DELETE /api/agent/sessions/current` | `Authorization: Device <token>` + `X-Session-Token`. |
 
 ## 6. Despliegue (on-premise)
 

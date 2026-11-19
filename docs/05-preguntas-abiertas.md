@@ -41,6 +41,15 @@ Elegidas por simplicidad; se pueden revisar en el PR.
 | Hash del PIN | El puerto `IPinHasher` vive en `Domain`: el agregado `Operator` lo necesita para verificar que el PIN nuevo sea distinto del actual. Infrastructure lo implementa con PBKDF2 (ADR-0011). |
 | Número de puesto | No se modifica después del alta: se editan fila, columna y hostname. Para renumerar se da de alta otro puesto. |
 | PIN nuevo | Además de no ser trivial, tiene que ser distinto del PIN actual (el temporal). |
+| Errores de concurrencia | Dos requests que guardan lo mismo a la vez (el mismo ticket, dos sesiones abiertas en un puesto) terminan en `ConcurrencyConflictException`. La API del agente responde `409` y el cliente puede reintentar. |
+| Códigos HTTP de la API del agente | `400` error de negocio, `401` token de dispositivo o sesión inválidos, `423` legajo bloqueado, `503` sin aviso publicado, `409` conflicto. El cuerpo siempre es `AgentError(code, message)`. |
+| Rate limiting | Ventana fija por IP en `/login` y en los endpoints de autenticación del agente: 20 pedidos por minuto, configurable en `RateLimiting:Auth`. Es un límite técnico, no un umbral de negocio. |
+| Tablas de Identity | Con nombres snake_case (`users`, `roles`, `user_roles`, ...), igual que el resto de la base. |
+| Acceso denegado | La página `/acceso-denegado` responde `403`; el middleware de cookies redirige ahí cuando el rol no alcanza. |
+| Credencial del agente | Archivo `%ProgramData%\BreakManager\Agent\credential.bin`, cifrado con DPAPI (`LocalMachine`). DPAPI viene en el runtime de Windows Desktop: no se agregó el paquete `System.Security.Cryptography.ProtectedData`. |
+| Agente y HTTPS en desarrollo | El compose de desarrollo publica la app por HTTP, pero el agente solo acepta HTTPS. Para probar el agente se usa `dotnet run --launch-profile https` con el certificado de desarrollo (`desarrollo.md`). |
+| Lista de contraseñas comunes | `100k-most-used-passwords-NCSC.txt` de SecLists (MIT), en minúsculas y con gzip, como recurso embebido de Infrastructure. |
+| Fallback de archivos de `MapStaticAssets` | No admite metadata de autorización. Lo cubre la `FallbackPolicy` (usuario autenticado) y hay un test que lo demuestra. |
 
 ## Resueltas
 

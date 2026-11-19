@@ -44,6 +44,7 @@ Cualquier warning rompe el build.
 dotnet test --solution BreakManager.Server.slnf                 # todos
 dotnet test --project tests/BreakManager.ArchitectureTests      # solo arquitectura
 dotnet test --project tests/BreakManager.Infrastructure.Tests   # integración (requiere Docker)
+dotnet test --project tests/BreakManager.Web.Tests              # host web + API del agente (requiere Docker)
 ```
 
 - El runner es **Microsoft.Testing.Platform** (configurado en `global.json`). Por eso se usan `--solution`/`--project`.
@@ -88,12 +89,50 @@ docker compose -f deploy/docker-compose.dev.yml down        # -v para borrar tam
 | Servicio | Qué hace |
 |---|---|
 | `db` | PostgreSQL 18 con un volumen nombrado y healthcheck. Publicado solo en `127.0.0.1:${DB_HOST_PORT}`. |
-| `migrate` | Corre la imagen de la app con el argumento `migrate`, aplica las migraciones y termina. |
+| `migrate` | Corre la imagen de la app con el argumento `migrate`, aplica las migraciones y la siembra de arranque, y termina. |
 | `app` | La aplicación en `127.0.0.1:${APP_HOST_PORT}`. Arranca cuando `db` está sana y `migrate` terminó bien. |
 
 - La imagen corre con un usuario **no root**: `docker compose -f deploy/docker-compose.dev.yml exec app whoami` → `app`.
 - Si el build de la imagen falla por TLS interceptado, definí `EXTRA_CA_CERT` en `deploy/.env`. Se pasa como secreto
   de BuildKit solo a la etapa de build y no queda en la imagen final.
+
+### Primer ingreso y datos de prueba
+
+El comando `migrate` (servicio `migrate` del compose) siembra lo mínimo para empezar:
+
+- Los roles web: `Administrator`, `Coordinator`, `Quality` y `Supervisor`.
+- El **admin inicial**, solo si no existe ningún Administrador. Se crea con `BOOTSTRAP_ADMIN_USERNAME` y
+  `BOOTSTRAP_ADMIN_PASSWORD` de `deploy/.env`. La contraseña tiene que tener 12 caracteres o más y no ser común.
+- En `Development`, y solo si no hay ninguno publicado, un **aviso de privacidad de prueba** marcado "BORRADOR".
+  El texto real lo redacta y publica la organización (Q10).
+
+Pasos:
+
+1. Completá `BOOTSTRAP_ADMIN_PASSWORD` en `deploy/.env` y levantá el compose.
+2. Entrá a `http://127.0.0.1:8080/login` con el admin. La primera vez se pide cambiar la contraseña.
+3. **Borrá `BOOTSTRAP_ADMIN_PASSWORD` de `deploy/.env`.** Ya no hace falta: el admin existe y la siembra no lo
+   vuelve a crear.
+
+Desde el menú de Admin: alta de puestos (y su código de enrolamiento), operadores (con PIN temporal), usuarios web,
+aviso de privacidad y sesiones abiertas.
+
+### Enrolar un agente local
+
+El agente solo habla **HTTPS** y valida el certificado. El compose de desarrollo publica la app por HTTP (el TLS
+llega con el reverse proxy en la Fase 7), así que para probar el agente se usa la web con `dotnet run` y el
+certificado de desarrollo:
+
+```bash
+dotnet dev-certs https --trust
+dotnet run --project src/Server/BreakManager.Web --launch-profile https    # https://localhost:7068
+dotnet run --project src/Agent/BreakManager.Agent.Windows
+```
+
+1. En la web: **Puestos → Alta de puesto → Generar código**. El código se muestra una sola vez.
+2. En el agente: servidor `https://localhost:7068` y el código. El token de dispositivo queda cifrado con DPAPI en
+   `%ProgramData%\BreakManager\Agent\credential.bin`. Borrá ese archivo para "desenrolar" la PC.
+3. Login con el legajo y el PIN temporal: aviso → cambio de PIN → "Sesión iniciada". La sesión aparece en
+   **Sesiones abiertas**, y la página de Puestos muestra el último uso y la IP.
 
 ## Ejecutar la web sin Docker
 
@@ -102,7 +141,12 @@ dotnet user-secrets set "ConnectionStrings:BreakManager" \
   "Host=localhost;Port=5432;Database=breakmanager;Username=breakmanager;Password=<clave>" \
   --project src/Server/BreakManager.Web
 dotnet run --project src/Server/BreakManager.Web
+dotnet src/Server/BreakManager.Web/bin/Debug/net10.0/BreakManager.Web.dll migrate   # migraciones + siembra
 ```
+
+Para la siembra del admin inicial, definí `BOOTSTRAP_ADMIN_USERNAME` y `BOOTSTRAP_ADMIN_PASSWORD` como variables
+de entorno solo para ese comando. Los parámetros de identidad (bloqueos, vencimientos) están en la sección
+`Identity` de la configuración; ver `docs/fases/fase-02-identidad.md`.
 
 `appsettings.Development.json` trae una cadena **sin contraseña**. La contraseña va en user-secrets o en la variable
 de entorno `ConnectionStrings__BreakManager`, nunca en el repositorio.
@@ -147,9 +191,11 @@ La tabla de historial se llama `__ef_migrations_history`, en snake_case como el 
 dotnet run --project src/Agent/BreakManager.Agent.Windows
 ```
 
-- Arranca minimizado en la bandeja, con el menú "Acerca de" y "Salir".
+- Arranca en la bandeja (menú "Abrir", "Cerrar sesión", "Acerca de" y "Salir") y muestra la ventana de enrolamiento
+  o de login. Cerrar la ventana solo la oculta.
 - Mantiene una sola instancia por PC con el mutex `Global\BreakManager.Agent`.
-- En la Fase 1 no detecta actividad: Raw Input llega en la Fase 4.
+- Desde la Fase 2: enrolamiento, login con legajo y PIN, aviso de privacidad y cambio de PIN (ver "Enrolar un
+  agente local"). Todavía no detecta actividad: Raw Input llega en la Fase 4.
 
 ## CI
 

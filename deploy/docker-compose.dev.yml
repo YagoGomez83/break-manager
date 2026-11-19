@@ -37,7 +37,11 @@ services:
     build: *app-build
     image: breakmanager-web:dev
     command: ["migrate"]
-    environment: *app-environment
+    environment:
+      <<: *app-environment
+      # Solo el servicio migrate recibe las credenciales del admin inicial; la app nunca las ve.
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy

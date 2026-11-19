@@ -13,6 +13,7 @@ public sealed class ProjectReferenceTests
         "Npgsql",
         "EFCore.",
         "Microsoft.AspNetCore",
+        "Microsoft.Extensions.Identity",
         "Microsoft.Extensions.Diagnostics.HealthChecks",
         "ClosedXML",
         "Serilog",
@@ -64,6 +65,15 @@ public sealed class ProjectReferenceTests
     public void AgentCore_OnlyReferencesContracts()
     {
         Assert.Equal([ContractsProject], Project(AgentCoreProject).ProjectReferences);
+    }
+
+    [Fact]
+    public void AgentCore_DoesNotReferenceDpapi()
+    {
+        // DPAPI es Windows: el almacén de credenciales vive en Agent.Windows (ADR-0010).
+        Assert.DoesNotContain(
+            Project(AgentCoreProject).PackageReferences,
+            package => package.StartsWith("System.Security.Cryptography.ProtectedData", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

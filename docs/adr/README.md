@@ -11,8 +11,8 @@
 | [0007](ADR-0007-idioma.md) | Idioma de documentación y código | Aceptado |
 | [0008](ADR-0008-plantillas-por-olas-relativas-al-turno.md) | Plantillas por olas y horarios relativos al turno | Aceptado (ampliado por 0009) |
 | [0009](ADR-0009-esquemas-flexibles-por-grupo.md) | Esquemas flexibles por grupo y niveles de ajuste | Aceptado |
-| [0010](ADR-0010-autenticacion-dispositivos-y-agente.md) | Autenticación de puestos y sesiones del agente con tokens opacos | Propuesto |
-| [0011](ADR-0011-identity-web-y-cuentas.md) | ASP.NET Core Identity en Infrastructure y cuentas web fuera del dominio | Propuesto |
+| [0010](ADR-0010-autenticacion-dispositivos-y-agente.md) | Autenticación de puestos y sesiones del agente con tokens opacos | Aceptado |
+| [0011](ADR-0011-identity-web-y-cuentas.md) | ASP.NET Core Identity en Infrastructure y cuentas web fuera del dominio | Aceptado |
 
 ## Plantilla para nuevos ADR
 

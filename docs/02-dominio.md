@@ -82,7 +82,10 @@ flowchart LR
 
 ### Presence
 
-- **WorkstationSession** (raíz) — `WorkstationId`, `OperatorId`, `StartedAt`, `EndedAt?`, `EndReason` (Logout/Relevo/Desconexión/FinDeTurno)
+- **WorkstationSession** (raíz) — `WorkstationId`, `OperatorId`, `StartedAt`, `EndedAt?`, `EndReason` (Logout/Relevo/MovedToAnotherWorkstation/Revocation/Desconexión/FinDeTurno)
+  - `Relevo`: **otro** operador abre sesión en el puesto (RN-17).
+  - `MovedToAnotherWorkstation`: el **mismo** operador abre sesión en otro puesto (RN-16).
+  - `Revocation`: el Admin revoca el puesto (ADR-0010).
 - **OperatorPresence** (raíz, una por operador y turno) — `OperatorId`, `OperationalDate`, `CurrentStatus`, `CurrentPeriod`
   - Produce **PresenceEvent** (append-only): `Id` (UUID v7), `Type`, `OperatorId`, `WorkstationId?`, `OccurredAt`, `ReceivedAt`, `Source` (Agent/Supervisor/System), `Flags` (Deferred, ClockSuspect), `Data`
   - `ActualBreak` — `Kind` (Planificado/NoPlanificado/Ausencia), `Type?`, `StartedAt`, `EndedAt?`, `PlannedBreakId?`
@@ -170,7 +173,7 @@ stateDiagram-v2
 ### Puestos, sesiones y relevos
 
 - **RN-15 — Desconexión:** sin heartbeat durante `HeartbeatTimeout` (30 s) → *Desconectado*. No es lo mismo que *Ausente*.
-- **RN-16 — Atribución por sesión:** la actividad de un puesto se atribuye al operador con sesión abierta. Máximo una sesión abierta por puesto y una por operador.
+- **RN-16 — Atribución por sesión:** la actividad de un puesto se atribuye al operador con sesión abierta. Máximo una sesión abierta por puesto y una por operador. Si el operador abre sesión en otro puesto, la anterior se cierra con `EndReason = MovedToAnotherWorkstation`.
 - **RN-17 — Relevo:** cuando el titular está en descanso, un relevista abre sesión en ese puesto. La sesión del titular se cierra con `EndReason = Relevo`, pero su estado sigue siendo *DescansoPlanificado*. Al volver, el titular abre sesión con PIN y la sesión del relevista se cierra.
 - **RN-18 — Puesto cubierto:** un puesto habilitado está cubierto si tiene sesión abierta con un operador *Activo* o *Inactivo*.
 - **RN-19 — Cobertura mínima:** si los puestos cubiertos caen por debajo de `MinimumCoverage` del grupo, el tablero muestra una alerta.

@@ -15,11 +15,6 @@ Estado: 🔴 bloquea una fase · 🟡 se puede avanzar con un supuesto · ✅ re
 | Q13 | Recursos de la VM (CPU, RAM, disco) y sistema operativo | Dimensionamiento | 2 vCPU, 4 GB RAM, 50 GB | Fase 7 | 🟡 |
 | Q15 | ¿Quién gestiona el esquema base: Coordinación, o cada supervisor parte de su propio esquema? | Permisos (RN-33) | Coordinación gestiona el base; los supervisores lo ajustan para su grupo | Fase 3 | 🟡 |
 | Q16 | ¿El operador puede cerrar el agente desde la bandeja ("Salir")? ¿O hace falta PIN o permiso de supervisor? | HU-26, RN-15 | Fase 1: "Salir" sin restricción (lo pide la spec); el cierre se ve como *Desconectado* | Fase 4 | 🟡 |
-| Q17 | Políticas de credenciales: PIN de 4–6 dígitos; contraseña web de 12 caracteres como mínimo; bloqueo web tras 5 intentos por 15 min; código de enrolamiento válido 24 h; token de sesión del agente válido 8 h. ¿Son correctos? | HU-01, HU-03, HU-04 | Los valores indicados, todos configurables | Fase 2 | 🟡 |
-| Q18 | ¿Con qué motivo se cierra una sesión (a) por revocación del puesto y (b) cuando el mismo operador abre sesión en otro puesto? | RN-16, RN-17, `EndReason` | (a) nuevo motivo `Revocation`; (b) `Relevo` | Fase 2 | 🟡 |
-| Q19 | ¿Se abre la sesión antes de aceptar el aviso, o solo después? | HU-01, HU-02 | Solo después: un ticket de un solo uso de 5 min une el login con la aceptación, para que un aviso sin aceptar no cierre la sesión de otro por relevo | Fase 2 | 🟡 |
-| Q20 | Si no hay ningún aviso de privacidad publicado, ¿se bloquea el login del agente? | HU-02, ADR-0006 | Sí: no se opera sin aviso publicado | Fase 2 | 🟡 |
-| Q21 | ¿Supervisor, Coordinador y Calidad necesitan alguna página en la Fase 2? | HU-03 | No: solo inicio; sus páginas llegan en las Fases 3 a 6 | Fase 2 | 🟡 |
 
 ## Decisiones menores tomadas sin spec (Fase 1)
 
@@ -53,3 +48,10 @@ Elegidas por simplicidad; se pueden revisar en el PR.
 | R13 (ex Q14) | ¿Cuántos puestos hay y cuándo hay relevistas? | 20 puestos. Los relevistas son el excedente de gente sobre los puestos habilitados (p. ej. 17 personas y 15 puestos → 2 relevistas). Es raro, pero pasa con puestos rotos o días con más gente. |
 | R14 (ex Q5) | ¿Cuándo descansan los relevistas? | El esquema tiene 25 posiciones para 20 puestos: las 21–25 son de relevo. Cada relevista descansa con la ola de su posición; por fila, salen en el último descanso de cada ronda. |
 | R12 | ¿Cómo se agrupan las salidas? | Por defecto por columna (el esquema actual); el supervisor puede cambiar a por fila o puesto por puesto |
+| R15 (ex Q17) | Políticas de credenciales | PIN de 6 dígitos fijos, sin triviales (repetidos, secuencias, el legajo). El Admin asigna un PIN temporal y el operador lo cambia en el primer login (`MustChangePin`). Se aceptan los demás valores propuestos: contraseña web de 12+ caracteres con rechazo de contraseñas comunes (lista incluida, sin internet), bloqueo web 5 / 15 min, código de enrolamiento de 24 h, sesión del agente de 8 h, revalidación de la sesión web cada 5 min. Todo configurable. |
+| R16 (ex Q18) | Motivo de cierre de sesión | `Revocation` al revocar el puesto. `MovedToAnotherWorkstation` cuando el mismo operador abre sesión en otro puesto. `Relevo` queda solo para cuando otro operador toma el puesto. |
+| R17 (ex Q19) | ¿Sesión antes o después del aviso? | Después. Flujo: login → aviso → cambio de PIN → sesión. El ticket queda ligado al operador, al token de dispositivo y a la versión del aviso; se guarda como hash, es de un solo uso y se consume en la misma transacción que abre la sesión. |
+| R18 (ex Q20) | Login sin aviso publicado | Se bloquea. El aviso "BORRADOR" se carga solo cuando `ASPNETCORE_ENVIRONMENT=Development`. |
+| R19 (ex Q21) | Páginas web para Supervisor, Coordinador y Calidad en la Fase 2 | Solo el inicio. |
+| R20 | Bloqueo del operador | Cada intento fallido registra el `WorkstationId`. 5 intentos → 5 min. Con 3 bloqueos en 24 h, el legajo queda bloqueado hasta que el Admin lo desbloquee desde la web (`OperatorUnlocked`). Todos los valores son parámetros. |
+| R21 | Seguimiento de los tokens de dispositivo | Se registran `LastSeenAt` y la última IP de cada token. Un cambio de IP genera `DeviceTokenIpChanged`. La página de Puestos muestra los dos datos. |
